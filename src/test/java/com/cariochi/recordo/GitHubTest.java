@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.List;
 
 @ExtendWith(RecordoExtension.class)
-class TestRecordo {
+class GitHubTest {
 
     @EnableRecordo
     private okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
@@ -41,7 +41,7 @@ class TestRecordo {
     }
 
     @Test
-    @MockHttp("/http/gists.json")
+    @MockHttp("/http/gists.mock.json")
     void test_mock_http(
             @Verify("/http/output.json") Expected<List<GitHub.GistResponse>> expected
     ) {
@@ -51,7 +51,7 @@ class TestRecordo {
 
     @Test
     void test_mock_http_with_variables(
-            @MockHttp("/http/gists_with_variables.json") MockHttpServer mockHttpServer,
+            @MockHttp("/http/gists_with_variables.mock.json") MockHttpServer mockHttpServer,
             @Verify("/http/output.json") Expected<List<GitHub.GistResponse>> expected
     ) {
         try (final MockHttpContext context = mockHttpServer.run()) {
