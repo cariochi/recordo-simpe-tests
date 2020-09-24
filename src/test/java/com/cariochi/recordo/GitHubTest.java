@@ -2,13 +2,10 @@ package com.cariochi.recordo;
 
 
 import com.cariochi.recordo.given.Assertion;
-import com.cariochi.recordo.mockhttp.MockHttpContext;
-import com.cariochi.recordo.mockhttp.MockHttpServer;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.cariochi.recordo.mockhttp.server.MockHttpContext;
 import feign.Feign;
-import feign.gson.GsonDecoder;
-import feign.gson.GsonEncoder;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 import feign.okhttp.OkHttpClient;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
@@ -22,13 +19,10 @@ class GitHubTest {
     @EnableRecordo
     private okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
 
-    @EnableRecordo
-    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
     private GitHub github = Feign.builder()
             .client(new OkHttpClient(client))
-            .decoder(new GsonDecoder(gson))
-            .encoder(new GsonEncoder(gson))
+            .encoder(new JacksonEncoder())
+            .decoder(new JacksonDecoder())
             .target(GitHub.class, "https://api.github.com");
 
     @Test
@@ -41,7 +35,7 @@ class GitHubTest {
     }
 
     @Test
-    @MockHttp("/http/gists.mock.json")
+    @MockHttpServer("/http/gists.mock.json")
     void test_mock_http(
             @Given("/http/output.json") Assertion<List<GitHub.GistResponse>> responseAssertion
     ) {
@@ -51,7 +45,7 @@ class GitHubTest {
 
     @Test
     void test_mock_http_with_variables(
-            @MockHttp("/http/gists_with_variables.mock.json") MockHttpServer mockHttpServer,
+            @MockHttpServer("/http/gists_with_variables.mock.json") com.cariochi.recordo.mockhttp.server.MockHttpServer mockHttpServer,
             @Given("/http/output.json") Assertion<List<GitHub.GistResponse>> assertion
     ) {
         try (final MockHttpContext context = mockHttpServer.run()) {
