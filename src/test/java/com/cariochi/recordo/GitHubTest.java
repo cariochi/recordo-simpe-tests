@@ -1,8 +1,8 @@
 package com.cariochi.recordo;
 
 
-import com.cariochi.recordo.given.Assertion;
-import com.cariochi.recordo.mockhttp.server.MockHttpContext;
+import com.cariochi.recordo.mockhttp.server.MockHttpServer;
+import com.cariochi.recordo.mockhttp.server.interceptors.okhttp.OkHttpClientInterceptor;
 import feign.Feign;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
+
+import static com.cariochi.recordo.assertions.RecordoAssertion.assertAsJson;
 
 @ExtendWith(RecordoExtension.class)
 class GitHubTest {
@@ -27,33 +29,30 @@ class GitHubTest {
 
     @Test
     void test_given_verify(
-            @Given("/dto/input.json") Dto dto,
-            @Given("/dto/output.json") Assertion<Dto> assertion
+            @Read("/dto/input.json") Dto dto
     ) {
         dto.setValue(dto.getValue() + "_updated");
-        assertion.assertAsExpected(dto);
+        assertAsJson(dto).isEqualTo("/dto/output.json");
     }
 
     @Test
-    @MockHttpServer("/http/gists.mock.json")
-    void test_mock_http(
-            @Given("/http/output.json") Assertion<List<GitHub.GistResponse>> responseAssertion
-    ) {
+    @WithMockHttpServer("/http/gists.mock.json")
+    void test_mock_http() {
         final List<GitHub.GistResponse> gists = github.getGists();
-        responseAssertion.assertAsExpected(gists);
+        assertAsJson(gists).isEqualTo("/http/output.json");
     }
 
     @Test
-    void test_mock_http_with_variables(
-            @MockHttpServer("/http/gists_with_variables.mock.json") com.cariochi.recordo.mockhttp.server.MockHttpServer mockHttpServer,
-            @Given("/http/output.json") Assertion<List<GitHub.GistResponse>> assertion
-    ) {
-        try (final MockHttpContext context = mockHttpServer.run()) {
-            context.set("id1", "36387e79b940de553ad0b381afc29bf4");
-            context.set("id2", "cc7e0f8678d69196387b623bd45f0f33");
-            context.set("id3", "14c814e5561e8f03fce5f6d815af706c");
+    void test_mock_http_with_variables() {
+        try (MockHttpServer mockServer =
+                     new MockHttpServer("/http/gists_with_variables.mock.json", new OkHttpClientInterceptor(client))) {
+
+            mockServer.set("id1", "36387e79b940de553ad0b381afc29bf4");
+            mockServer.set("id2", "cc7e0f8678d69196387b623bd45f0f33");
+            mockServer.set("id3", "14c814e5561e8f03fce5f6d815af706c");
             final List<GitHub.GistResponse> gists = github.getGists();
-            assertion.assertAsExpected(gists);
+
+            assertAsJson(gists).isEqualTo("/http/output.json");
         }
     }
 
